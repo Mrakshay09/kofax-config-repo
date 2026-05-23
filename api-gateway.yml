@@ -163,6 +163,25 @@ resilience4j:
         baseConfig: default
       uploadCb:
         baseConfig: default
+  timelimiter:
+    # Spring Cloud Circuit Breaker wraps every CB-protected call in a
+    # TimeLimiter and defaults to 1 second – aggressive enough that on a
+    # busy Docker Desktop host (load avg 15+) the reactive chain itself
+    # exceeds the budget BEFORE the upstream even responds, producing:
+    #   "Did not observe any item or terminal signal within 1000ms in
+    #    'circuitBreaker' (and no fallback has been configured)"
+    # Bumping to 10s aligns with `slowCallDurationThreshold: 5s` above and
+    # gives plenty of slack for the upstream + gateway filters.
+    configs:
+      default:
+        timeoutDuration: 10s
+        cancelRunningFuture: true
+    instances:
+      authCb:    { baseConfig: default }
+      userCb:    { baseConfig: default }
+      bcCb:      { baseConfig: default }
+      bpCb:      { baseConfig: default }
+      uploadCb:  { baseConfig: default }
 
 management:
   endpoints:
@@ -179,3 +198,15 @@ management:
   otlp:
     tracing:
       endpoint: ${OTLP_TRACE_ENDPOINT:http://localhost:4318/v1/traces}
+
+kofax:
+  security:
+    jwt:
+      # MUST match authentication-service's mint-time values (see
+      # git-config/authentication-service.yml: kofax.security.jwt.*).
+      # The gateway's JwtReactiveAuthenticationManager enforces these via
+      # requireIssuer/requireAudience – a mismatch surfaces as
+      # "Missing expected '<expected>' value in 'aud' claim [<actual>]".
+      issuer:   ${JWT_ISSUER:kofax-platform}
+      audience: ${JWT_AUDIENCE:kofax-clients}
+      secret:   ${JWT_SECRET:changeit-changeit-changeit-changeit-changeit-changeit-changeit}
