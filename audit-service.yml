@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: audit-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/kofax_audit}
+    username: ${DB_USER:kofax}
+    password: ${DB_PASSWORD:kofax}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: audit_schema
+  flyway:
+    schemas: audit_schema
+    default-schema: audit_schema
+  elasticsearch:
+    uris: ${ELASTIC_URIS:http://localhost:9200}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    consumer:
+      group-id: audit-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      ack-mode: manual
+      concurrency: 4
+server:
+  port: 8093
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+kofax:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:changeit-changeit-changeit-changeit-changeit-changeit-changeit}
+  audit:
+    enable-elastic: ${AUDIT_ELASTIC:true}

@@ -1,0 +1,155 @@
+spring:
+  application:
+    name: api-gateway
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false                 # we declare explicit routes for hardening
+          lower-case-service-id: true
+      default-filters:
+        - DedupeResponseHeader=Vary Origin
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 100
+            redis-rate-limiter.burstCapacity: 200
+            redis-rate-limiter.requestedTokens: 1
+            key-resolver: '#{@userKeyResolver}'
+        - name: Retry
+          args:
+            retries: 2
+            statuses: BAD_GATEWAY,GATEWAY_TIMEOUT,SERVICE_UNAVAILABLE
+            methods: GET
+            backoff:
+              firstBackoff: 200ms
+              maxBackoff: 2s
+              factor: 2
+              basedOnPreviousValue: false
+      routes:
+        - id: auth-service
+          uri: lb://authentication-service
+          predicates: [ "Path=/api/v1/auth/**" ]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: authCb
+                fallbackUri: forward:/fallback
+        - id: user-service
+          uri: lb://user-management-service
+          predicates: [ "Path=/api/v1/users/**, /api/v1/internal/users/**" ]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: userCb
+                fallbackUri: forward:/fallback
+        - id: batch-class-service
+          uri: lb://batch-class-service
+          predicates: [ "Path=/api/v1/batch-classes/**" ]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: bcCb
+                fallbackUri: forward:/fallback
+        - id: batch-processing-service
+          uri: lb://batch-processing-service
+          predicates: [ "Path=/api/v1/batches/**" ]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: bpCb
+                fallbackUri: forward:/fallback
+        - id: scan-upload-service
+          uri: lb://scan-upload-service
+          predicates: [ "Path=/api/v1/uploads/**" ]
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: uploadCb
+                fallbackUri: forward:/fallback
+            - SetRequestHeader=X-Forwarded-Prefix,/api/v1/uploads
+        - id: ocr-service
+          uri: lb://ocr-processing-service
+          predicates: [ "Path=/api/v1/ocr/**" ]
+        - id: validation-service
+          uri: lb://validation-service
+          predicates: [ "Path=/api/v1/validation/**" ]
+        - id: verification-service
+          uri: lb://verification-service
+          predicates: [ "Path=/api/v1/verification/**" ]
+        - id: pdf-service
+          uri: lb://pdf-generation-service
+          predicates: [ "Path=/api/v1/pdf/**" ]
+        - id: export-service
+          uri: lb://export-service
+          predicates: [ "Path=/api/v1/exports/**" ]
+        - id: qc-service
+          uri: lb://quality-control-service
+          predicates: [ "Path=/api/v1/qc/**" ]
+        - id: notification-service
+          uri: lb://notification-service
+          predicates: [ "Path=/api/v1/notifications/**, /ws/**" ]
+        - id: audit-service
+          uri: lb://audit-service
+          predicates: [ "Path=/api/v1/audit/**" ]
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: ${CORS_ORIGINS:*}
+            allowedMethods: [ GET,POST,PUT,PATCH,DELETE,OPTIONS ]
+            allowedHeaders: [ "*" ]
+            exposedHeaders: [ "X-Correlation-Id" ]
+            allowCredentials: true
+
+server:
+  port: 8080
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 50
+        permittedNumberOfCallsInHalfOpenState: 5
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 50
+        slowCallRateThreshold: 60
+        slowCallDurationThreshold: 5s
+    instances:
+      authCb:
+        baseConfig: default
+      userCb:
+        baseConfig: default
+      bcCb:
+        baseConfig: default
+      bpCb:
+        baseConfig: default
+      uploadCb:
+        baseConfig: default
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,gateway
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTLP_TRACE_ENDPOINT:http://localhost:4318/v1/traces}

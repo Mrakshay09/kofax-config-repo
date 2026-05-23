@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: scan-upload-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/kofax_upload}
+    username: ${DB_USER:kofax}
+    password: ${DB_PASSWORD:kofax}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: upload_schema
+  flyway:
+    schemas: upload_schema
+    default-schema: upload_schema
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 600MB
+
+server:
+  port: 8089
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  tracing:
+    sampling:
+      probability: 1.0
+
+kofax:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:changeit-changeit-changeit-changeit-changeit-changeit-changeit}
+  storage:
+    type: s3
+    endpoint: ${S3_ENDPOINT:http://localhost:9000}
+    region: us-east-1
+    access-key: ${S3_ACCESS_KEY:minioadmin}
+    secret-key: ${S3_SECRET_KEY:minioadmin}
+    path-style-access: true
+    buckets:
+      originals: kofax-originals
+      pdfs: kofax-pdfs
+      ocr: kofax-ocr
+      exports: kofax-exports
+  upload:
+    accepted-content-types: image/tiff, image/jpeg, application/pdf, image/png
+    max-file-bytes: 209715200

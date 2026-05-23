@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: validation-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/kofax_validation}
+    username: ${DB_USER:kofax}
+    password: ${DB_PASSWORD:kofax}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: validation_schema
+  flyway:
+    schemas: validation_schema
+    default-schema: validation_schema
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    consumer:
+      group-id: validation-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      ack-mode: manual
+      concurrency: 4
+
+server:
+  port: 8090
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  tracing:
+    sampling:
+      probability: 1.0
+kofax:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:changeit-changeit-changeit-changeit-changeit-changeit-changeit}

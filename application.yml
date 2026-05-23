@@ -1,0 +1,54 @@
+# Shared defaults applied to every microservice. Service-specific overrides live in
+# {service-name}.yml inside this directory (or in the git repo when using profile=git).
+spring:
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  jackson:
+    default-property-inclusion: non_null
+    deserialization:
+      fail-on-unknown-properties: false
+logging:
+  pattern:
+    level: '%5p [trace=%X{traceId:-} span=%X{spanId:-} corr=%X{correlationId:-}]'
+  level:
+    root: INFO
+    com.kofax: DEBUG
+    org.hibernate.SQL: WARN
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,loggers,env,configprops
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+      env: ${SPRING_PROFILES_ACTIVE:local}
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTLP_TRACE_ENDPOINT:http://localhost:4318/v1/traces}
+kofax:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:changeit-changeit-changeit-changeit-changeit-changeit-changeit}
+      access-token-ttl: PT15M
+      refresh-token-ttl: P7D
+      issuer: kofax-platform
+      audience: kofax-platform
+  storage:
+    provider: s3
+    s3:
+      endpoint: ${S3_ENDPOINT:http://localhost:9000}
+      region: ${S3_REGION:us-east-1}
+      access-key: ${S3_ACCESS_KEY:minio}
+      secret-key: ${S3_SECRET_KEY:minio12345}
+      path-style: true

@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: notification-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/kofax_notification}
+    username: ${DB_USER:kofax}
+    password: ${DB_PASSWORD:kofax}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: notification_schema
+  flyway:
+    schemas: notification_schema
+    default-schema: notification_schema
+  mail:
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASS:}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    consumer:
+      group-id: notification-service
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      ack-mode: manual
+      concurrency: 3
+server:
+  port: 8092
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+kofax:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:changeit-changeit-changeit-changeit-changeit-changeit-changeit}
+  notification:
+    from: ${NOTIFICATION_FROM:noreply@kofax.local}
+    enable-email: ${NOTIFICATION_EMAIL:false}
+    enable-websocket: true

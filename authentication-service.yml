@@ -1,0 +1,83 @@
+spring:
+  application:
+    name: authentication-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/kofax_auth}
+    username: ${DB_USER:kofax}
+    password: ${DB_PASSWORD:kofax}
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 5000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: auth_schema
+        jdbc.time_zone: UTC
+        jdbc.batch_size: 50
+  flyway:
+    enabled: true
+    schemas: auth_schema
+    default-schema: auth_schema
+    locations: classpath:db/migration
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    timeout: 2s
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    producer:
+      properties:
+        enable.idempotence: true
+server:
+  port: 8081
+  forward-headers-strategy: framework
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+  instance:
+    prefer-ip-address: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+kofax:
+  security:
+    jwt:
+      issuer: kofax-platform
+      audience: kofax-clients
+      secret: ${JWT_SECRET:changeit-changeit-changeit-changeit-changeit-changeit-changeit}
+      access-token-ttl: PT15M
+      refresh-token-ttl: P7D
+      clock-skew-seconds: 30
+  auth:
+    max-failed-attempts: 5
+    lockout-duration: PT15M
+    user-service-url: http://user-management-service
+  outbox:
+    poll-interval-ms: 1000
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  show-actuator: false
+logging:
+  config: classpath:logback-spring.xml
