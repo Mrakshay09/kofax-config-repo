@@ -3,8 +3,8 @@ spring:
     name: export-service
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
-  config:
-    import: optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}
+  # NOTE: spring.config.import is intentionally OMITTED from served configs
+  # (lives in the client's in-jar application.yml). See api-gateway.yml.
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/kofax_export}
     username: ${DB_USER:kofax}
@@ -40,6 +40,10 @@ spring:
           jobStore:
             class: org.springframework.scheduling.quartz.LocalDataSourceJobStore
             isClustered: true
+            # Schema resolution is handled via DB_URL `?currentSchema=…` so
+            # this stays an un-qualified identifier (Quartz interpolates the
+            # prefix into dotted SQL like `<prefix>TRIGGERS T`, and a dotted
+            # value produces malformed queries on PostgreSQL).
             tablePrefix: ex_qrtz_
           threadPool:
             threadCount: 5

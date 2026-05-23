@@ -3,8 +3,12 @@ spring:
     name: api-gateway
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
-  config:
-    import: optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}
+  # NOTE: `spring.config.import: configserver:...` is intentionally OMITTED
+  # from configs served by the config-server. Re-introducing it here would
+  # cause the config-server's NativeEnvironmentRepository to recursively
+  # process the import on every request (each child SpringApplication would
+  # re-fetch from itself), saturating the Tomcat thread pool. The clients'
+  # in-jar application.yml is the only place that line should appear.
   data:
     redis:
       host: ${REDIS_HOST:localhost}
