@@ -35,7 +35,7 @@ spring:
         isolation.level: read_committed
     listener:
       ack-mode: manual
-      concurrency: 6
+      concurrency: ${KAFKA_LISTENER_CONCURRENCY:1}
   quartz:
     job-store-type: jdbc
     jdbc:
