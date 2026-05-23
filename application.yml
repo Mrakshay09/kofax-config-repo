@@ -42,8 +42,17 @@ kofax:
       secret: ${JWT_SECRET:changeit-changeit-changeit-changeit-changeit-changeit-changeit}
       access-token-ttl: PT15M
       refresh-token-ttl: P7D
+      # `issuer` is who mints the token (the platform); `audience` is who the
+      # token is FOR (clients calling the API). All service-specific overrides
+      # and the kofax-common JwtProperties default agree on `kofax-clients`,
+      # and authentication-service mints tokens with aud=kofax-clients. The
+      # shared default previously had `audience: kofax-platform` (a typo of
+      # `issuer`) which would make the API-gateway reject every token with
+      # "Missing expected 'kofax-platform' value in 'aud' claim [kofax-clients]"
+      # whenever the gateway-specific override wasn't applied (e.g. cold
+      # start, refresh ordering, etc).
       issuer: kofax-platform
-      audience: kofax-platform
+      audience: kofax-clients
   storage:
     provider: s3
     s3:
