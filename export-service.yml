@@ -39,6 +39,13 @@ spring:
             instanceId: AUTO
           jobStore:
             class: org.springframework.scheduling.quartz.LocalDataSourceJobStore
+            # PostgreSQL stores Quartz job/trigger payloads in `bytea` columns.
+            # The default StdJDBCDelegate uses `getBlob()` which on PostgreSQL
+            # interprets the column as an OID Large Object pointer and fails
+            # with `Bad value for type long : \xaced0005...` (the hex prefix
+            # of Java's serialized-object stream).  PostgreSQLDelegate uses
+            # `getBytes()` / `setBytes()` which is the correct path for bytea.
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
             isClustered: true
             # Schema resolution is handled via DB_URL `?currentSchema=…` so
             # this stays an un-qualified identifier (Quartz interpolates the

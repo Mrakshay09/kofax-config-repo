@@ -73,7 +73,6 @@ kofax:
   auth:
     max-failed-attempts: 5
     lockout-duration: PT15M
-    user-service-url: http://user-management-service
   outbox:
     poll-interval-ms: 1000
 springdoc:
