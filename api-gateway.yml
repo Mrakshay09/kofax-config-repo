@@ -119,6 +119,25 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_URI:http://localhost:8761/eureka}
+    # The gateway typically boots BEFORE the downstream services finish
+    # registering with Eureka. With the default 30s registry-fetch interval,
+    # the first ~35s of gateway uptime sees `lb://<service>` resolve to an
+    # empty instance list, which is then cached by Spring Cloud LoadBalancer
+    # for another 35s (LoadBalancerCacheProperties.ttl default). The net
+    # effect is ~70s where the gateway returns 503 SERVICE_UNAVAILABLE for
+    # any route to a not-yet-registered upstream, even after the upstream
+    # has come up. Shorten both windows to ~5s for snappier cold-start.
+    registry-fetch-interval-seconds: 5
+    initial-instance-info-replication-interval-seconds: 5
+    instance-info-replication-interval-seconds: 10
+
+spring.cloud.loadbalancer:
+  cache:
+    # Mirror eureka.client.registry-fetch-interval-seconds. Without this, the
+    # gateway happily caches an empty `ServiceInstanceList` for 35s after the
+    # first failed lookup and keeps 503'ing even after Eureka has the instance.
+    ttl: 5s
+    capacity: 256
 
 resilience4j:
   circuitbreaker:
