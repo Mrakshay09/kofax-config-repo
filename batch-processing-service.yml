@@ -27,6 +27,8 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
     consumer:
       group-id: batch-processing-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
       auto-offset-reset: earliest
       enable-auto-commit: false
       properties:
