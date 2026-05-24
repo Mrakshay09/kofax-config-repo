@@ -38,7 +38,7 @@ spring:
             redis-rate-limiter.replenishRate: 100
             redis-rate-limiter.burstCapacity: 200
             redis-rate-limiter.requestedTokens: 1
-            redis-rate-limiter.includeHeaders: false
+            redis-rate-limiter.include-headers: false
             key-resolver: '#{@userKeyResolver}'
         - name: Retry
           args:
@@ -78,11 +78,6 @@ spring:
         - id: batch-processing-service
           uri: lb://batch-processing-service
           predicates: [ "Path=/api/v1/batches/**" ]
-          filters:
-            - name: CircuitBreaker
-              args:
-                name: bpCb
-                fallbackUri: forward:/fallback
         - id: scan-upload-service
           uri: lb://scan-upload-service
           predicates: [ "Path=/api/v1/uploads/**" ]
@@ -160,8 +155,6 @@ resilience4j:
         baseConfig: default
       bcCb:
         baseConfig: default
-      bpCb:
-        baseConfig: default
       uploadCb:
         baseConfig: default
   timelimiter:
@@ -185,7 +178,6 @@ resilience4j:
         timeoutDuration: 45s
       userCb:    { baseConfig: default }
       bcCb:      { baseConfig: default }
-      bpCb:      { baseConfig: default }
       uploadCb:  { baseConfig: default }
 
 management:
