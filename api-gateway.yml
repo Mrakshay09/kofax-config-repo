@@ -178,7 +178,11 @@ resilience4j:
         timeoutDuration: 10s
         cancelRunningFuture: true
     instances:
-      authCb:    { baseConfig: default }
+      # Login can be slow on a saturated local Docker Desktop stack because
+      # authentication-service does DB work and calls user-management-service.
+      authCb:
+        baseConfig: default
+        timeoutDuration: 45s
       userCb:    { baseConfig: default }
       bcCb:      { baseConfig: default }
       bpCb:      { baseConfig: default }
